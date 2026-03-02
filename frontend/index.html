@@ -731,8 +731,16 @@
             <div class="input-bar">
                 <div class="input-box">
                     <div class="input-top">
-                        <input type="text" id="companyInput" placeholder="Enter company name..." />
-                        <button class="go-btn" id="submitBtn" onclick="submit()">Analyze ➜</button>
+                        <input type="text" id="companyInput" placeholder="Company Name (e.g. Reliance Industries)" />
+                        <input type="text" id="cinInput" placeholder="CIN (e.g. U17100MH2010PTC123456)"
+                            style="max-width: 200px;" />
+                        <input type="text" id="gstinInput" placeholder="GSTIN (e.g. 27AAACS1234A1Z5)"
+                            style="max-width: 180px;" />
+                    </div>
+                    <div class="input-top" style="margin-top: 5px;">
+                        <input type="text" id="panInput" placeholder="PAN (e.g. AAACS1234A)"
+                            style="max-width: 150px;" />
+                        <button class="go-btn" id="submitBtn" onclick="submit()">Start Pipeline ➜</button>
                     </div>
                     <div class="input-bottom">
                         <label class="upl-btn">
@@ -768,30 +776,77 @@
 
         async function submit() {
             const co = document.getElementById('companyInput').value.trim();
+            const cin = document.getElementById('cinInput').value.trim();
+            const gstin = document.getElementById('gstinInput').value.trim();
+            const pan = document.getElementById('panInput').value.trim();
+
             if (!co) { alert('Enter a company name.'); return; }
             if (!files.length) { alert('Attach at least one document.'); return; }
             const webSearch = document.getElementById('webToggle').checked;
 
             document.getElementById('welcomeScreen').style.display = 'none';
-            addMsg('user', `Analyze "${co}" — ${files.length} doc(s) ${webSearch ? '+ Web Search' : '(no web search)'}`);
+            addMsg('user', `Starting Pipeline for "${co}"...`);
             const pid = addProc(webSearch);
             document.getElementById('submitBtn').disabled = true;
 
             try {
+                // STAGE 1: INGESTION
+                updateStep(pid, 0, 'active');
                 const fd = new FormData();
                 fd.append('company_name', co);
-                fd.append('web_search', webSearch ? 'true' : 'false');
                 for (let f of files) fd.append('files', f);
 
-                updateStep(pid, 0, 'active');
-                const res = await fetch(`${BASE}/analyze`, { method: 'POST', body: fd });
-                if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed'); }
-                for (let i = 0; i <= (webSearch ? 3 : 2); i++)updateStep(pid, i, 'done');
-                const data = await res.json();
-                showResult(data, co);
-                addHist(co, data);
-            } catch (e) { addMsg('sys', `<div class="lbl">❌ Error</div>${e.message}`); }
-            finally { document.getElementById('submitBtn').disabled = false; files = []; renderChips(); document.getElementById('companyInput').value = ''; }
+                const ingestorRes = await fetch(`http://localhost:8000/process`, { method: 'POST', body: fd });
+                if (!ingestorRes.ok) throw new Error('Ingestion Layer Failed');
+                const ingestorData = await ingestorRes.json();
+                updateStep(pid, 0, 'done');
+                addMsg('sys', `<div class="lbl">✅ Ingestion Complete</div>Documents processed. Key metrics extracted.`);
+
+                let finalData = ingestorData.data;
+
+                // STAGE 2: RESEARCH (Optional)
+                if (webSearch) {
+                    updateStep(pid, 1, 'active');
+                    const researchPayload = {
+                        case_id: "CASE_" + Date.now(),
+                        company_name: co,
+                        cin: cin || "U12345MH2023PTC123456", // Fallback for demo
+                        gstin: gstin || "27ABCDE1234F1Z5",    // Fallback for demo
+                        pan: pan || "ABCDE1234F",             // Fallback for demo
+                        promoters: [{ name: "Director 1", din: "12345678", designation: "MD", shareholding_pct: 100 }],
+                        loan: { amount: 1000000, purpose: "Business Expansion", loan_type: "term_loan", tenor_months: 12 },
+                        ingestion_version: "v2.0",
+                        // Pass through the full ingestion JSON so the research agent
+                        // can cross-check against document-derived metrics.
+                        ingestion_output: finalData
+                    };
+
+                    const researchRes = await fetch(`http://localhost:9001/research`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(researchPayload)
+                    });
+
+                    if (researchRes.ok) {
+                        const researchData = await researchRes.json();
+                        // Merge or show research
+                        addMsg('sys', `<div class="lbl">✅ Research Complete</div>Aggregated Risk Score: ${researchData.risk_score} (${researchData.risk_band})`);
+                        updateStep(pid, 1, 'done');
+                        // For demo, we just show the ingestion data but you could merge them here
+                    } else {
+                        addMsg('sys', `<div class="lbl">⚠️ Research Failed</div>Proceeding with document data only.`);
+                    }
+                }
+
+                showResult(finalData, co);
+            } catch (e) {
+                addMsg('sys', `<div class="lbl">❌ Error</div>${e.message}`);
+            }
+            finally {
+                document.getElementById('submitBtn').disabled = false;
+                files = [];
+                renderChips();
+            }
         }
 
         function addMsg(type, html) { const c = document.getElementById('chatMessages'); const d = document.createElement('div'); d.className = `msg ${type === 'user' ? 'user' : 'sys'}`; d.innerHTML = html; c.appendChild(d); c.scrollTop = c.scrollHeight; }

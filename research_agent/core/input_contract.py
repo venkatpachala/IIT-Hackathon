@@ -74,6 +74,12 @@ class ResearchRequest(BaseModel):
     Mandatory fields
     ----------------
     case_id, company_name, cin, gstin, pan, promoters (≥1), loan, ingestion_version
+
+    The `ingestion_output` field is optional and is intended to carry
+    the full JSON produced by the upstream ingestion / extractor layer
+    (12-section credit appraisal JSON). It can be used by future
+    versions of the research agent for cross-checks without changing
+    the primary contract.
     """
 
     case_id:           str          = Field(..., min_length=3,
@@ -93,6 +99,13 @@ class ResearchRequest(BaseModel):
                                             description="Primary insights from site visits or management interviews")
     ingestion_version: str          = Field(...,
                                             description="Schema version, e.g. UCES_v1")
+    ingestion_output:  dict | None  = Field(
+        default=None,
+        description=(
+            "Optional snapshot of the upstream ingestion layer's structured "
+            "credit JSON (12-section output)."
+        ),
+    )
 
     # ── Validators ───────────────────────────────────────────
 
