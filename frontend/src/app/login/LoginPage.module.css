@@ -1,0 +1,250 @@
+.root {
+    min-height: 100vh;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+}
+
+.bgOrbs {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.orb1 {
+    position: absolute;
+    top: -200px;
+    left: -200px;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(79, 126, 248, 0.12) 0%, transparent 70%);
+    animation: driftA 20s ease-in-out infinite alternate;
+}
+
+.orb2 {
+    position: absolute;
+    bottom: -200px;
+    right: -100px;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    animation: driftB 25s ease-in-out infinite alternate;
+}
+
+.orb3 {
+    position: absolute;
+    top: 40%;
+    left: 40%;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.07) 0%, transparent 70%);
+    animation: driftC 18s ease-in-out infinite alternate;
+}
+
+@keyframes driftA {
+    to {
+        transform: translate(60px, 80px) scale(1.1);
+    }
+}
+
+@keyframes driftB {
+    to {
+        transform: translate(-40px, -60px) scale(0.95);
+    }
+}
+
+@keyframes driftC {
+    to {
+        transform: translate(-80px, 40px) scale(1.2);
+    }
+}
+
+.bgGrid {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+        linear-gradient(rgba(79, 126, 248, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 126, 248, 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+
+/* ── Left Panel ── */
+.leftPanel {
+    position: relative;
+    z-index: 1;
+    width: 480px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(13, 14, 17, 0.98) 0%, rgba(18, 20, 28, 0.95) 100%);
+    border-right: 1px solid var(--border-subtle);
+    padding: 60px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.brand {
+    margin-bottom: 56px;
+}
+
+.logoMark {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(79, 126, 248, 0.4);
+}
+
+.logoMark span {
+    color: #fff;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+}
+
+.brandName {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 0%, var(--accent-bright) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.brandTagline {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.features {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+}
+
+.featureItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.featureIcon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.featureTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+}
+
+.featureDesc {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.versionTag {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Right Panel ── */
+.rightPanel {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.formCard {
+    width: 100%;
+    max-width: 440px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-2xl);
+    padding: 40px;
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    animation: scaleIn 0.4s ease both;
+}
+
+.formHeader {
+    margin-bottom: 28px;
+}
+
+.formTitle {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.formSubtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.submitBtn {
+    width: 100%;
+    justify-content: center;
+    padding: 13px;
+    font-size: 15px;
+    margin-top: 4px;
+}
+
+.formFooter {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.footerText {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.footerLink {
+    font-size: 13px;
+    color: var(--accent-bright);
+    font-weight: 500;
+}
+
+.footerLink:hover {
+    color: #fff;
+}

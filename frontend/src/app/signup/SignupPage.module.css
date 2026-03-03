@@ -1,0 +1,306 @@
+.root {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    padding: 40px 20px;
+}
+
+.bgOrbs {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.orb1 {
+    position: absolute;
+    top: -200px;
+    right: -100px;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(79, 126, 248, 0.12) 0%, transparent 70%);
+}
+
+.orb2 {
+    position: absolute;
+    bottom: -150px;
+    left: -150px;
+    width: 450px;
+    height: 450px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.09) 0%, transparent 70%);
+}
+
+.bgGrid {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+        linear-gradient(rgba(79, 126, 248, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 126, 248, 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+}
+
+.container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 680px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+
+.logoRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logoMark {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(79, 126, 248, 0.35);
+}
+
+.logoMark span {
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.logoText {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+}
+
+.stepIndicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stepDot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: all 0.3s;
+}
+
+.stepDotActive {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.stepLine {
+    width: 40px;
+    height: 2px;
+    background: var(--border-subtle);
+    border-radius: 2px;
+    transition: all 0.3s;
+}
+
+.stepLineActive {
+    background: var(--accent);
+}
+
+.card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-2xl);
+    padding: 40px;
+    box-shadow: var(--shadow-lg);
+}
+
+.backBtn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 16px;
+    transition: color 0.15s;
+}
+
+.backBtn:hover {
+    color: var(--text-primary);
+}
+
+.rolePill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(79, 126, 248, 0.1);
+    border: 1px solid rgba(79, 126, 248, 0.25);
+    color: var(--accent-bright);
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.cardTitle {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.cardSubtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+}
+
+.roleGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.roleCard {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.roleCard:hover {
+    border-color: var(--accent);
+    background: var(--bg-elevated);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(79, 126, 248, 0.15);
+}
+
+.roleCardActive {
+    border-color: var(--accent);
+    background: rgba(79, 126, 248, 0.08);
+    box-shadow: 0 0 0 2px var(--border-glow), 0 8px 24px rgba(79, 126, 248, 0.2);
+}
+
+.roleIcon {
+    font-size: 28px;
+}
+
+.roleTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.roleDesc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.roleArrow {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-bright);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.twoCol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.submitBtn {
+    width: 100%;
+    justify-content: center;
+    padding: 13px;
+    font-size: 15px;
+    margin-top: 4px;
+}
+
+.cardFooter {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.cardFooter a {
+    color: var(--accent-bright);
+    font-weight: 500;
+}
+
+.cardFooter a:hover {
+    color: #fff;
+}
+
+/* Success screen */
+.successScreen {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 16px;
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+}
+
+.successIcon {
+    font-size: 64px;
+}
+
+.successTitle {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.successDesc {
+    font-size: 15px;
+    color: var(--text-secondary);
+}

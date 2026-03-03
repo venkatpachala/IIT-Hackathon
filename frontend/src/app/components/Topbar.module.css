@@ -1,0 +1,111 @@
+.topbar {
+    height: 52px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(8px);
+}
+
+.left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.brand:hover {
+    text-decoration: none;
+}
+
+.brandName {
+    letter-spacing: -0.3px;
+}
+
+.links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.link {
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.link:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.roleTag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-blue-bright);
+    background: var(--accent-blue-dim);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.userBadge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: var(--radius-md);
+    transition: background 0.15s ease;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.userBadge:hover {
+    background: var(--bg-elevated);
+}
+
+.avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+}
+
+.chevron {
+    font-size: 10px;
+    color: var(--text-muted);
+}

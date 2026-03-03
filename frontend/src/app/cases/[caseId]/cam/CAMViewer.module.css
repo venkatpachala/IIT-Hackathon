@@ -1,0 +1,414 @@
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding: 32px;
+    max-width: 960px;
+    animation: fadeIn 0.3s ease both;
+}
+
+/* Page header */
+.pageHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 20px;
+}
+
+.companyName {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.7px;
+    margin-bottom: 6px;
+}
+
+.metaRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.metaCaseId {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.metaDot {
+    color: var(--border-strong);
+}
+
+.downloadButtons {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Decision card */
+.decisionCard {
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid;
+}
+
+.decisionAmber {
+    background: linear-gradient(135deg, rgba(58, 46, 26, 0.8), rgba(58, 46, 26, 0.4));
+    border-color: var(--amber);
+}
+
+.decisionGreen {
+    background: linear-gradient(135deg, rgba(30, 58, 42, 0.8), rgba(30, 58, 42, 0.4));
+    border-color: var(--green);
+}
+
+.decisionRed {
+    background: linear-gradient(135deg, rgba(58, 26, 26, 0.8), rgba(58, 26, 26, 0.4));
+    border-color: var(--red);
+}
+
+.decisionBlack {
+    background: linear-gradient(135deg, rgba(42, 42, 42, 0.8), rgba(42, 42, 42, 0.4));
+    border-color: #555;
+}
+
+.decisionBadge {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.decisionGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+}
+
+.decisionField {}
+
+.dfLabel {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.dfVal {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.dfMuted {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    font-size: 15px;
+}
+
+.scoreNum {
+    font-size: 22px;
+}
+
+.scoreMax {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Section */
+.section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.sectionTitle {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 16px;
+}
+
+.sectionTitleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 16px;
+}
+
+.sectionTitleRow .sectionTitle {
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.flagSummary {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* Decision summary */
+.decisionSummary {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    font-style: italic;
+    border-left: 3px solid var(--accent-blue-dim);
+    padding-left: 16px;
+}
+
+/* Five Cs */
+.fiveCsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cCard {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.cHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 120px;
+    flex-shrink: 0;
+}
+
+.cName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cScore {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 52px;
+    text-align: right;
+}
+
+.scoreBarTrack {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-elevated);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.scoreBarFill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+/* Risk flags */
+.flagGroup {
+    margin-bottom: 12px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+.fg_critical {
+    border-color: rgba(207, 82, 82, 0.4);
+}
+
+.fg_high {
+    border-color: rgba(232, 168, 56, 0.4);
+}
+
+.fg_medium {
+    border-color: rgba(232, 200, 56, 0.2);
+}
+
+.fg_positive {
+    border-color: rgba(95, 173, 86, 0.3);
+}
+
+.flagGroupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-tertiary);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.noneText {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.flagCount {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.flagList {
+    list-style: none;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.flagItem {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding-left: 8px;
+}
+
+/* Rate derivation */
+.rateTable {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rateRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+}
+
+.rateRow:hover {
+    background: var(--bg-elevated);
+}
+
+.rateBase {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.rateLabel {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.rateVal {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.rateDivider {
+    height: 1px;
+    background: var(--border-strong);
+    margin: 8px 0;
+}
+
+.rateFinal {
+    background: linear-gradient(90deg, rgba(77, 143, 204, 0.08), transparent);
+    border-radius: var(--radius-md);
+}
+
+.rateFinal .rateLabel {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.rateFinal .rateVal {
+    font-size: 16px;
+    color: var(--accent-blue-bright);
+}
+
+/* Full CAM */
+.fullCamBtn {
+    width: 100%;
+    justify-content: center;
+}
+
+.fullCamText {
+    margin-top: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Approver section */
+.approverSection {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+.approverTitle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.approverStatus {
+    text-align: center;
+}
+
+.approverStatusText {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+    .decisionGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .pageHeader {
+        flex-direction: column;
+    }
+
+    .downloadButtons {
+        flex-direction: column;
+    }
+
+    .decisionGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+}

@@ -1,0 +1,223 @@
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding: 32px;
+    max-width: 780px;
+    animation: fadeIn 0.3s ease both;
+}
+
+.pageHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+
+.caseId {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.elapsedBadge {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Pipeline card */
+.pipelineCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.pipelineHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+.phLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.phCount {
+    font-size: 12px;
+    color: var(--accent-blue-bright);
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Stage list */
+.stageList {
+    padding: 8px 0;
+}
+
+.stageItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 24px;
+    position: relative;
+    transition: background 0.15s;
+}
+
+.stageItem:hover {
+    background: var(--bg-elevated);
+}
+
+.stage_complete {
+    opacity: 1;
+}
+
+.stage_running {
+    opacity: 1;
+}
+
+.stage_waiting {
+    opacity: 0.5;
+}
+
+.stage_error {
+    opacity: 1;
+}
+
+/* Connector */
+.connector {
+    position: absolute;
+    left: 40px;
+    top: 52px;
+    width: 2px;
+    height: calc(100% - 20px);
+    background: var(--border-subtle);
+    z-index: 0;
+}
+
+.connectorFilled {
+    background: var(--green);
+}
+
+/* Stage icon */
+.stageIcon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    background: var(--bg-card);
+    border-radius: 50%;
+}
+
+.spinnerIcon {
+    display: inline-block;
+}
+
+/* Stage info */
+.stageInfo {
+    flex: 1;
+    min-width: 0;
+    padding-top: 4px;
+}
+
+.stageLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.stageDetail {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Stage status */
+.stageStatus {
+    flex-shrink: 0;
+    padding-top: 6px;
+}
+
+.statusComplete {
+    font-size: 12px;
+    color: var(--green-text);
+    font-weight: 600;
+}
+
+.statusRunning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--accent-blue-bright);
+    font-weight: 600;
+}
+
+.statusWaiting {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Footer */
+.footerCards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.infoCard {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+}
+
+.infoIcon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.infoTitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.infoValue {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}

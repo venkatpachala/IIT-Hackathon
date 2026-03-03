@@ -1,0 +1,242 @@
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding: 32px;
+    max-width: 1200px;
+    animation: fadeIn 0.3s ease both;
+}
+
+.pageHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+
+.greeting {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+}
+
+.greetingSubline {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Stats */
+.statsRow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.statCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.statCard:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.statCard_blue {
+    border-left: 3px solid var(--accent-blue);
+}
+
+.statCard_amber {
+    border-left: 3px solid var(--amber);
+}
+
+.statCard_green {
+    border-left: 3px solid var(--green);
+}
+
+.statIcon {
+    font-size: 20px;
+}
+
+.statValue {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.statLabel {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Cases section */
+.casesSection {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.sectionTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.loadingRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    white-space: nowrap;
+}
+
+.tableRow td {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(61, 64, 67, 0.5);
+    vertical-align: middle;
+}
+
+.tableRow:last-child td {
+    border-bottom: none;
+}
+
+.tableRow:hover td {
+    background: var(--bg-elevated);
+}
+
+.caseId {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.companyName {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.riskBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.amount {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.statusPill {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.openBtn {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-blue-bright);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.openBtn:hover {
+    background: var(--accent-blue-dim);
+    text-decoration: none;
+}
+
+/* Quick actions */
+.quickActions {
+    display: flex;
+    gap: 12px;
+}
+
+.quickAction {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.quickAction:hover {
+    background: var(--bg-elevated);
+    border-color: var(--accent-blue-dim);
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+
+.qaIcon {
+    font-size: 20px;
+}
+
+.qaLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
