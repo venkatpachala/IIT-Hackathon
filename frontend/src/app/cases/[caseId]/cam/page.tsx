@@ -101,6 +101,34 @@ export default function CAMViewerPage() {
     const totalRate = cam.rate_derivation.reduce((s, r) => s + r.rate, 0);
     const hasFlags = cam.risk_flags.some(g => g.flags.length > 0 && g.level !== 'POSITIVE');
 
+    const handleDownload = async (fmt: 'pdf' | 'docx') => {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const token = localStorage.getItem('access_token');
+
+        try {
+            const res = await fetch(`${baseUrl}/cases/${caseId}/cam/download?fmt=${fmt}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            });
+
+            if (!res.ok) throw new Error('Download failed');
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `CAM_${caseId}_${cam?.company_name.replace(/\s+/g, '_') || 'Report'}.${fmt}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (e) {
+            console.error('Download error:', e);
+            alert('Failed to download file. Please try again.');
+        }
+    };
+
     return (
         <div className={styles.layout}>
             <Sidebar role={userRole === 'senior_approver' ? 'approver' : 'manager'} />
@@ -126,6 +154,20 @@ export default function CAMViewerPage() {
                         </div>
                     </div>
                     <div className={styles.headerActions}>
+                        <div className={styles.downloadButtons}>
+                            <button
+                                onClick={() => handleDownload('pdf')}
+                                className="btn-secondary"
+                            >
+                                📄 PDF
+                            </button>
+                            <button
+                                onClick={() => handleDownload('docx')}
+                                className="btn-ghost"
+                            >
+                                📝 Word
+                            </button>
+                        </div>
                         {userRole !== 'senior_approver' && !sendDone && (
                             <button
                                 className="btn-primary"
@@ -138,12 +180,11 @@ export default function CAMViewerPage() {
                         )}
                         {sendDone && (
                             <div className={styles.sentBadge}>✅ Sent to Approver Queue</div>
-                        )}
-                        {userRole === 'senior_approver' && (
+                        ) || (userRole === 'senior_approver' && (
                             <Link href={`/cases/${caseId}/review`} className="btn-primary">
                                 Make Decision →
                             </Link>
-                        )}
+                        ))}
                     </div>
                 </div>
 

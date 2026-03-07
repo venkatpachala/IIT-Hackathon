@@ -15,7 +15,8 @@ from docx.shared import Pt, RGBColor, Inches, Cm
 # ── Color palette ────────────────────────────────────────────
 
 class Colors:
-    PRIMARY    = RGBColor(0x1B, 0x36, 0x5D)   # Deep navy
+    IDFC_MAROON= RGBColor(0x8B, 0x00, 0x00)   # IDFC First Maroon
+    PRIMARY    = IDFC_MAROON                # IDFC Maroon (updated from deep navy)
     SECONDARY  = RGBColor(0x2C, 0x3E, 0x50)   # Charcoal
     WHITE      = RGBColor(0xFF, 0xFF, 0xFF)
 
@@ -27,7 +28,7 @@ class Colors:
     RED_LIGHT  = RGBColor(0xFD, 0xED, 0xEC)   # Red background
     BLACK_RISK = RGBColor(0x17, 0x20, 0x2A)   # Black risk band
 
-    TABLE_HDR  = RGBColor(0x1B, 0x36, 0x5D)   # Navy — table headers
+    TABLE_HDR  = IDFC_MAROON                # IDFC Maroon — table headers
     TABLE_ALT  = RGBColor(0xF4, 0xF6, 0xF7)   # Light grey — alternating rows
     BORDER     = RGBColor(0xCC, 0xD2, 0xD8)   # Table border
     SEPARATOR  = RGBColor(0x21, 0x8B, 0xC4)   # Teal — section decorator
