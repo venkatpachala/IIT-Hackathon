@@ -1,17 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiLogin } from '@/lib/api';
 import styles from './LoginPage.module.css';
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const sessionExpired = searchParams.get('reason') === 'session_expired';
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -84,6 +88,25 @@ export default function LoginPage() {
                         <h2 className={styles.formTitle}>Welcome back</h2>
                         <p className={styles.formSubtitle}>Sign in to your workspace</p>
                     </div>
+
+                    {/* Session expired banner */}
+                    {sessionExpired && (
+                        <div style={{
+                            background: 'rgba(255,152,0,0.12)',
+                            border: '1px solid rgba(255,152,0,0.4)',
+                            borderRadius: '8px',
+                            padding: '10px 14px',
+                            marginBottom: '16px',
+                            color: '#ff9800',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                        }}>
+                            <span>⏱️</span>
+                            <span>Your session expired. Please sign in again to continue.</span>
+                        </div>
+                    )}
 
                     <form className={styles.form} onSubmit={handleSubmit}>
                         <div className="form-group">

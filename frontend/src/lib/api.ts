@@ -30,6 +30,18 @@ async function request<T = unknown>(
     });
 
     if (!res.ok) {
+        // ── Auto-logout on 401: token expired or missing ──────────────
+        if (res.status === 401 && typeof window !== 'undefined') {
+            // Clear ALL auth keys so the stale role/name don't stay behind
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_name');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('user_id');
+            // Redirect to login with a hint message
+            window.location.href = '/login?reason=session_expired';
+            // Return a never-resolving promise — navigation is in progress
+            return new Promise(() => { });
+        }
         const body = await res.json().catch(() => ({ detail: res.statusText }));
         throw new APIError(res.status, body.detail ?? 'Request failed');
     }

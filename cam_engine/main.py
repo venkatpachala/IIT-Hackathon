@@ -148,7 +148,7 @@ def generate_cam(
                    or req.get("loan_type", "Working Capital"))
     tenor       = int(req.get("loan", {}).get("tenor_months", 36) or 36)
 
-    # Pull financial data for narrative hydration
+    # ── Pull financial data for narrative hydration (v2 — full CMA-grade) ───
     income      = extraction.get("income_statement", {})
     rev_vals    = _extract_period_values(income.get("total_revenue", {}))
     ebitda_vals = _extract_period_values(income.get("ebitda", {}))
@@ -158,6 +158,23 @@ def generate_cam(
     rev_cagr    = _cagr(rev_vals)
     ebitda_m    = (ebitda_vals[-1] / rev_vals[-1] * 100) if (rev_vals and ebitda_vals and rev_vals[-1]) else 0.0
 
+    # Gross profit series: revenue - cost_of_sales per period
+    gp_vals = _extract_period_values(income.get("gross_profit", {}))
+    if not gp_vals:
+        cogs_vals = _extract_period_values(income.get("cost_of_sales", {}) or income.get("total_cost_of_sales", {}))
+        gp_vals   = [r - c for r, c in zip(rev_vals, cogs_vals)] if cogs_vals else [0.0] * len(rev_vals)
+
+    # Finance charges series (TL + CC)
+    fc_tl_vals  = _extract_period_values(income.get("finance_charges_tl", {}))
+    fc_cc_vals  = _extract_period_values(income.get("finance_charges_cc", {}))
+    fc_all_vals = _extract_period_values(income.get("finance_charges", {}) or income.get("total_finance_charges", {}))
+    if not fc_all_vals and fc_tl_vals:
+        fc_all_vals = [tl + cc for tl, cc in zip(
+            fc_tl_vals,
+            fc_cc_vals if fc_cc_vals else [0.0]*len(fc_tl_vals)
+        )]
+
+    # Balance sheet
     bs          = extraction.get("balance_sheet", {})
     cm          = extraction.get("credit_metrics", {})
     nw          = _safe(bs.get("net_worth", 0))
@@ -173,6 +190,112 @@ def generate_cam(
         de = td / nw
     dscr        = _safe(cm.get("dscr", 0))
     icr         = _latest_val(cm.get("interest_coverage_ratio", {}))
+
+    # 3-year balance sheet series (lacs — extracted directly from income/bs)
+    nw_series  = _extract_period_values(bs.get("net_worth_series", {}))  or [nw]  * 3
+    td_series  = _extract_period_values(bs.get("total_debt_series", {})) or [td]  * 3
+    cr_series  = _extract_period_values(bs.get("current_ratio", {}))     or []
+    de_series  = _extract_period_values(bs.get("gearing_ratio", {}))     or [de]  * 3
+    sc_series  = _extract_period_values(bs.get("share_capital", {}))     or []
+    rs_series  = _extract_period_values(bs.get("reserves_surplus", {}))  or []
+    tl_series  = _extract_period_values(bs.get("term_loans", {}))        or []
+    cc_series  = _extract_period_values(bs.get("cc_outstanding", {}))    or []
+    tol_series = _extract_period_values(bs.get("total_outside_liab", {})) or []
+    tnw_series = _extract_period_values(bs.get("tangible_nw", {}))       or [tnw] * 3
+    tol_tnw_s  = _extract_period_values(bs.get("tol_tnw_ratio", {}))     or []
+
+    # DSCR computation fields
+    dep_latest = _safe(income.get("depreciation", {}).get("latest") or
+                       _latest_val(income.get("depreciation", {})) or 0)
+    tl_repayment_l = _safe(cm.get("annual_tl_repayment") or bs.get("tl_repayment_latest") or 0)
+    pat_l    = pat_vals[-1] if pat_vals else 0.0
+    fc_l     = fc_all_vals[-1] if fc_all_vals else 0.0
+    cash_acc = pat_l + dep_latest + fc_l
+    debt_svc = tl_repayment_l + fc_l
+    dscr_computed = (cash_acc / debt_svc) if debt_svc > 0 else dscr
+    if dscr == 0 and dscr_computed > 0:
+        dscr = dscr_computed
+
+    # MPBF / Working Capital (Tandon Method II)
+    wc_data   = extraction.get("working_capital_analysis", {}) or extraction.get("banking_data", {})
+    tca       = _safe(wc_data.get("total_current_assets") or bs.get("current_assets") or 0)
+    ca_lc     = _safe(bs.get("current_assets", 0))
+    tca       = tca or ca_lc
+    cl_ex     = _safe(wc_data.get("current_liab_ex_bank") or bs.get("current_liabilities") or 0)
+    wc_gap    = tca - cl_ex if tca > 0 else 0.0
+    mpbf      = _safe(wc_data.get("mpbf") or cm.get("mpbf") or (wc_gap * 0.75))
+    nwc_val   = _safe(wc_data.get("nwc") or bs.get("nwc") or (tca - _safe(bs.get("current_liabilities", 0))))
+    min_nwc   = wc_gap * 0.25
+    proposed_cc_l = float(req.get("loan", {}).get("amount_inr", 0) or requested_amount) / 1e5  # to lacs
+    within_mpbf = "Yes" if (proposed_cc_l <= mpbf or mpbf == 0) else f"No — exceeds MPBF by Rs.{proposed_cc_l - mpbf:.2f}L"
+    within_mpbf_margin = (
+        f"{nwc_val/wc_gap*100:.0f}% of Working Capital Gap — adequate NWC margin"
+        if wc_gap > 0 else "NWC margin data pending"
+    )
+
+    # GST data
+    gst_data   = extraction.get("gst_data", {}) or {}
+    gst_turnover  = _safe(gst_data.get("annual_turnover") or 0)
+    bank_credits  = _safe(gst_data.get("bank_credits")     or 0)
+    gst_bank_r    = gst_turnover / bank_credits if bank_credits > 0 else 0.0
+    gstr2a_itc    = _safe(gst_data.get("gstr2a_itc")       or 0)
+    gstr3b_itc    = _safe(gst_data.get("gstr3b_itc")       or 0)
+    itc_var_pct   = ((gstr3b_itc - gstr2a_itc) / gstr2a_itc * 100) if gstr2a_itc > 0 else 0.0
+    gst_comp_pct  = _safe(gst_data.get("filing_compliance_pct") or 100)
+    gstn_status   = str(gst_data.get("registration_status") or "Active")
+
+    # Site visit data text
+    qi_parts = []
+    if qualitative.get("factory_capacity_pct") not in (None, -1, ""):
+        qi_parts.append(f"Factory capacity: {qualitative['factory_capacity_pct']}%.")
+    if qualitative.get("management_quality"):
+        labels_mq = {5:"Excellent", 4:"Good", 3:"Average", 2:"Below Average", 1:"Poor"}
+        mq = int(qualitative.get("management_quality", 0))
+        qi_parts.append(f"Management quality: {mq}/5 ({labels_mq.get(mq,'N/A')}).")
+    if qualitative.get("site_condition"):
+        qi_parts.append(f"Site condition: {qualitative['site_condition'].capitalize()}.")
+    if qualitative.get("key_person_risk"):
+        qi_parts.append("Key-person dependency risk identified.")
+    if qualitative.get("supply_chain_risk"):
+        qi_parts.append("Supply chain concentration risk noted.")
+    if qualitative.get("cibil_commercial_score") not in (None, -1, ""):
+        qi_parts.append(f"CIBIL Commercial Score: {qualitative['cibil_commercial_score']}.")
+    if qualitative.get("notes"):
+        qi_parts.append(f"Credit officer notes: {qualitative['notes']}")
+    site_visit_text = " ".join(qi_parts) or "Site visit data not submitted by credit officer."
+
+    # Existing facilities
+    existing_fac = extraction.get("credit_metrics", {}).get("existing_credit_facilities", []) or []
+
+    # Rate derivation text
+    rate_deriv_lines = [f"  Base Rate (MCLR + Spread): {rate_rec.base_rate:.2f}%"]
+    for p in rate_rec.premiums:
+        bps = getattr(p, 'bps', 0) or 0
+        if bps > 0:
+            rate_deriv_lines.append(f"  + {p.reason}: +{bps/100:.2f}%")
+    rate_deriv_lines.append(f"  Final Rate: {rate_rec.final_rate:.2f}% p.a.")
+    rate_deriv_text = "\n".join(rate_deriv_lines)
+    rate_build_up_text = f"{rate_rec.base_rate:.2f}% base + {rate_rec.final_rate - rate_rec.base_rate:.2f}% premium = {rate_rec.final_rate:.2f}% p.a."
+
+    # Amount derivation text
+    adj_lines = [f"  Starting point: Requested Rs.{req_amount_cr:.2f} Crore"]
+    for i, a in enumerate(amount_rec.adjustments, 1):
+        adl = getattr(a, 'reason', str(a))
+        adlines_final = getattr(a, 'final', None)
+        if adlines_final:
+            adj_lines.append(f"  Step {i} — {adl}: Rs.{float(adlines_final)/1e7:.2f} Cr")
+    adj_lines.append(f"  Recommended: Rs.{rec_amount_cr:.2f} Crore")
+    amount_deriv_text = "\n".join(adj_lines)
+    amount_reason_text = (
+        f"Limit moderated from Rs.{req_amount_cr:.2f} Cr (requested) based on composite score "
+        f"{composite.composite_score}/100 and MPBF constraint."
+        if rec_amount_cr < req_amount_cr else
+        f"Full requested amount of Rs.{req_amount_cr:.2f} Cr recommended — MPBF supports and risk profile adequate."
+    )
+    mpbf_compliance_text = (
+        f"Yes — Proposed CC Rs.{proposed_cc_l:.2f}L is within MPBF of Rs.{mpbf:.2f}L"
+        if mpbf > 0 else "MPBF computation pending — CMA data required"
+    )
 
     collateral  = extraction.get("collateral_data", [])
     total_market   = sum(_safe(a.get("market_value")) for a in collateral)
@@ -205,42 +328,96 @@ def generate_cam(
         capital_score    = cap2_dim.score,
         collateral_score = col_dim.score,
         conditions_score = res_scores.conditions.score,
-        capacity_breakdown  = [b.model_dump() for b in cap_dim.breakdown],
-        capital_breakdown   = [b.model_dump() for b in cap2_dim.breakdown],
-        collateral_breakdown= [b.model_dump() for b in col_dim.breakdown],
-        revenue  = rev_vals,
-        ebitda   = ebitda_vals,
-        pat      = pat_vals,
-        cfo      = cfo_vals,
-        periods  = [str(p) for p in periods[:3]],
-        rev_cagr = rev_cagr,
+        capacity_breakdown   = [b.model_dump() for b in cap_dim.breakdown],
+        capital_breakdown    = [b.model_dump() for b in cap2_dim.breakdown],
+        collateral_breakdown = [b.model_dump() for b in col_dim.breakdown],
+        # ── 3-year income statement ────────────────────────────────────
+        revenue          = rev_vals,
+        ebitda           = ebitda_vals,
+        gross_profit     = gp_vals,
+        finance_charges  = fc_all_vals or [0.0] * 3,
+        pat              = pat_vals,
+        cfo              = cfo_vals,
+        periods          = [str(p) for p in periods[:3]],
+        rev_cagr         = rev_cagr,
         ebitda_margin_latest = ebitda_m,
-        dscr       = dscr,
-        icr        = icr,
-        de_ratio   = de,
-        net_worth_cr    = nw / 1e2 if nw > 1e4 else nw,     # assume crores if < 10000
-        total_debt_cr   = td / 1e2 if td > 1e4 else td,
-        tangible_nw_cr  = tnw / 1e2 if tnw > 1e4 else tnw,
-        total_assets_cr = ta / 1e2 if ta > 1e4 else ta,
-        promoter_shareholding = float(extraction.get("company_profile", {}).get("promoter_stake_pct", 0) or 0),
-        collateral_assets  = collateral,
-        total_market_cr    = total_market / 1e2 if total_market > 1e4 else total_market,
-        total_distress_cr  = total_distress / 1e2 if total_distress > 1e4 else total_distress,
-        coverage_market    = cov_market,
-        coverage_distress  = cov_distress,
-        research_flags     = flags_list,
-        research_tags      = tags_list,
-        rbi_result         = rbi_result,
-        litigation_count   = len(lit_flags),
-        mca_flag_count     = len([f for f in flags_list if f.get("source") == "MCA"]),
-        news_signals       = [s for s in news_signals if s][:5],
-        sector_score       = res_scores.conditions.score,
-        rate_base          = rate_rec.base_rate,
-        rate_premiums      = [p.model_dump() for p in rate_rec.premiums],
-        amount_adjustments = [a.model_dump() for a in amount_rec.adjustments],
+        depreciation_latest  = dep_latest,
+        # ── DSCR computation ───────────────────────────────────────────
+        dscr                 = dscr,
+        icr                  = icr,
+        tl_repayment_latest  = tl_repayment_l,
+        cash_accrual         = cash_acc,
+        debt_service         = debt_svc,
+        cfo_pat_ratio        = (cfo_vals[-1] / pat_vals[-1]) if (pat_vals and pat_vals[-1] and cfo_vals) else 0.0,
+        # ── Balance sheet ratios ───────────────────────────────────────
+        de_ratio             = de,
+        net_worth_cr         = nw / 1e2 if nw > 1e4 else nw,
+        total_debt_cr        = td / 1e2 if td > 1e4 else td,
+        tangible_nw_cr       = tnw / 1e2 if tnw > 1e4 else tnw,
+        total_assets_cr      = ta / 1e2 if ta > 1e4 else ta,
+        # ── 3-year series (lacs) ───────────────────────────────────────
+        net_worth_series     = nw_series,
+        total_debt_series    = td_series,
+        current_ratio_series = cr_series,
+        de_ratio_series      = de_series,
+        share_capital_series    = sc_series,
+        reserves_surplus_series = rs_series,
+        term_loan_series        = tl_series,
+        cc_outstanding_series   = cc_series,
+        tol_series              = tol_series,
+        tnw_series              = tnw_series,
+        tol_tnw_series          = tol_tnw_s,
+        # ── MPBF / Tandon ─────────────────────────────────────────────
+        total_current_assets = tca,
+        current_liab_ex_bank = cl_ex,
+        wc_gap               = wc_gap,
+        proposed_cc          = proposed_cc_l,
+        mpbf                 = mpbf,
+        nwc                  = nwc_val,
+        min_nwc_stipulated   = min_nwc,
+        within_mpbf          = within_mpbf,
+        within_mpbf_margin   = within_mpbf_margin,
+        # ── GST ────────────────────────────────────────────────────────
+        gst_compliance_pct   = gst_comp_pct,
+        gst_turnover         = gst_turnover,
+        bank_credits         = bank_credits,
+        gst_bank_ratio       = gst_bank_r,
+        gstr2a_itc           = gstr2a_itc,
+        gstr3b_itc           = gstr3b_itc,
+        itc_variance_pct     = itc_var_pct,
+        gstn_status          = gstn_status,
+        # ── Capital structure ──────────────────────────────────────────
+        promoter_shareholding   = float(extraction.get("company_profile", {}).get("promoter_stake_pct", 0) or 0),
+        unsecured_loans         = _safe(bs.get("unsecured_loans_promoters") or 0),
+        existing_facilities     = existing_fac,
+        # ── Collateral ─────────────────────────────────────────────────
+        collateral_assets    = collateral,
+        total_market_cr      = total_market / 1e2 if total_market > 1e4 else total_market,
+        total_distress_cr    = total_distress / 1e2 if total_distress > 1e4 else total_distress,
+        coverage_market      = cov_market,
+        coverage_distress    = cov_distress,
+        # ── Research ────────────────────────────────────────────────────
+        research_flags       = flags_list,
+        research_tags        = tags_list,
+        rbi_result           = rbi_result,
+        litigation_count     = len(lit_flags),
+        mca_flag_count       = len([f for f in flags_list if f.get("source") == "MCA"]),
+        news_signals         = [s for s in news_signals if s][:5],
+        sector_score         = res_scores.conditions.score,
+        # ── Rate & Amount derivation ────────────────────────────────────
+        rate_base            = rate_rec.base_rate,
+        rate_premiums        = [p.model_dump() for p in rate_rec.premiums],
+        rate_build_up        = rate_build_up_text,
+        rate_derivation      = rate_deriv_text,
+        amount_adjustments   = [a.model_dump() for a in amount_rec.adjustments],
+        amount_derivation    = amount_deriv_text,
+        amount_reason        = amount_reason_text,
         conditions_precedent = conds,
         covenants            = covs,
-        # ── Primary Insight fields ───────────────────────────────────────
+        mpbf_compliance      = mpbf_compliance_text,
+        # ── Site visit ─────────────────────────────────────────────────
+        site_visit_data              = site_visit_text,
+        # ── Primary Insight ────────────────────────────────────────────
         qualitative_adjustment       = composite.qualitative_adjustment,
         qualitative_explanations     = composite.qualitative_explanations,
         cross_pillar_contradictions  = composite.cross_pillar_contradictions,
@@ -251,6 +428,8 @@ def generate_cam(
         supply_chain_risk            = bool(qualitative.get("supply_chain_risk", False)),
         cibil_commercial_score       = float(qualitative.get("cibil_commercial_score", -1) or -1),
         primary_insight_notes        = str(qualitative.get("notes", "") or ""),
+        repo_rate                    = float(os.getenv("REPO_RATE", "6.50")),
+        bank_spread                  = float(os.getenv("BANK_SPREAD", "3.00")),
     )
 
     narr_gen   = NarrativeGenerator(api_key=os.getenv("GEMINI_API_KEY"))
