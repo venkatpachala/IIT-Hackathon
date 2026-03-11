@@ -523,23 +523,41 @@ def generate_cam(
 
     # ── 7. Build Word document ────────────────────────────────
     print("[Pillar 3] Step 7/7 — Building Word document...")
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    # Always resolve to absolute path to avoid path mismatch between
+    # cam_engine working directory and backend working directory
+    abs_output_dir = Path(output_dir).resolve()
+    abs_output_dir.mkdir(parents=True, exist_ok=True)
     ts        = datetime.now().strftime("%Y%m%d_%H%M%S")
-    docx_path = str(Path(output_dir) / f"CAM_{case_id}_{ts}.docx")
+    docx_path = str(abs_output_dir / f"CAM_{case_id}_{ts}.docx")
 
     try:
         builder  = CAMBuilder()
         doc      = builder.build(cam_data)
         doc.save(docx_path)
-        print(f"           DOCX saved: {docx_path}")
-        cam_data["docx_path"] = docx_path
+
+        # Verify DOCX was actually written
+        docx_file = Path(docx_path)
+        if docx_file.exists() and docx_file.stat().st_size > 1024:
+            cam_data["docx_path"] = str(docx_file)
+            print(f"           DOCX saved: {docx_file} ({docx_file.stat().st_size:,} bytes)")
+        else:
+            print(f"[Pillar 3] WARNING: DOCX file missing or too small: {docx_path}", file=sys.stderr)
+            cam_data["docx_path"] = None
 
         # PDF conversion
-        pdf_path  = docx_path.replace(".docx", ".pdf")
-        pdf_result= convert_to_pdf(docx_path, pdf_path)
-        cam_data["pdf_path"] = pdf_result or docx_path
+        pdf_path   = docx_path.replace(".docx", ".pdf")
+        pdf_result = convert_to_pdf(docx_path, pdf_path)
+        if pdf_result and Path(pdf_result).exists() and Path(pdf_result).stat().st_size > 1024:
+            cam_data["pdf_path"] = str(Path(pdf_result).resolve())
+            print(f"           PDF  saved: {cam_data['pdf_path']} ({Path(pdf_result).stat().st_size:,} bytes)")
+        else:
+            # Graceful degradation: serve DOCX if PDF conversion fails
+            cam_data["pdf_path"] = cam_data.get("docx_path")
+            print(f"           PDF conversion failed — DOCX will be served for PDF downloads")
     except Exception as e:
+        import traceback
         print(f"[Pillar 3] Document build failed: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         cam_data["docx_path"] = None
         cam_data["pdf_path"]  = None
         cam_data["doc_error"] = str(e)

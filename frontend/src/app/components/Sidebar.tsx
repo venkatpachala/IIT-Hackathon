@@ -8,7 +8,6 @@ interface SidebarItem {
     icon: string;
     label: string;
     href: string;
-    active?: boolean;
 }
 
 interface SidebarProps {
@@ -18,16 +17,14 @@ interface SidebarProps {
 }
 
 const managerItems: SidebarItem[] = [
-    { icon: '📊', label: 'Dashboard', href: '/dashboard/manager' },
-    { icon: '📁', label: 'My Cases', href: '/cases' },
-    { icon: '➕', label: 'New Case', href: '/cases/new' },
-    { icon: '⚙️', label: 'Settings', href: '/settings' },
+    { icon: '⊞', label: 'Dashboard', href: '/dashboard/manager' },
+    { icon: '◫', label: 'My Cases', href: '/cases' },
+    { icon: '+', label: 'New Case', href: '/cases/new' },
 ];
 
 const approverItems: SidebarItem[] = [
-    { icon: '📋', label: 'Review Queue', href: '/dashboard/approver' },
-    { icon: '✅', label: 'Completed', href: '/cases/completed' },
-    { icon: '⚙️', label: 'Settings', href: '/settings' },
+    { icon: '≡', label: 'Review Queue', href: '/dashboard/approver' },
+    { icon: '✓', label: 'Completed', href: '/cases/completed' },
 ];
 
 export default function Sidebar({ role, activePage, userName = 'User' }: SidebarProps) {
@@ -41,13 +38,11 @@ export default function Sidebar({ role, activePage, userName = 'User' }: Sidebar
 
     return (
         <aside className={styles.sidebar}>
-            {/* Logo */}
             <div className={styles.logo}>
-                <span className={styles.logoIcon}>🏦</span>
-                <span className={styles.logoText}>Intelli-Credit</span>
+                <div className={styles.logoMark}><span>IC</span></div>
+                <span className={styles.logoText}>Intelli‑Credit</span>
             </div>
 
-            {/* Nav */}
             <nav className={styles.nav}>
                 {items.map((item) => (
                     <Link
@@ -61,7 +56,6 @@ export default function Sidebar({ role, activePage, userName = 'User' }: Sidebar
                 ))}
             </nav>
 
-            {/* User */}
             <div className={styles.userSection}>
                 <div className={styles.userInfo}>
                     <div className={styles.avatar}>{userName.charAt(0).toUpperCase()}</div>

@@ -875,7 +875,15 @@ def generate_cam_documents(case_id: str, cam_data: dict, company_name: str):
     Build DOCX + PDF from an existing cam_data dict.
     Used to regenerate files for cases where docx/pdf paths are missing.
     Returns (docx_path, pdf_path).
+
+    Production-grade:
+      - Always uses absolute paths (avoids cwd mismatch across services)
+      - Verifies files exist and are non-trivial (>1 KB)
+      - Logs detailed errors with tracebacks
+      - Graceful degradation: returns (docx_path, docx_path) if PDF fails
     """
+    import traceback
+
     cam_engine_path = str(CAM_ENGINE_DIR)
     if cam_engine_path not in sys.path:
         sys.path.insert(0, cam_engine_path)
@@ -883,19 +891,43 @@ def generate_cam_documents(case_id: str, cam_data: dict, company_name: str):
     from document.builder import CAMBuilder
     from document.pdf_converter import convert_to_pdf
 
-    case_output_dir = CAM_OUTPUT_DIR / case_id
+    case_output_dir = (CAM_OUTPUT_DIR / case_id).resolve()
     case_output_dir.mkdir(parents=True, exist_ok=True)
 
     ts        = datetime.now().strftime("%Y%m%d_%H%M%S")
     docx_path = str(case_output_dir / f"CAM_{case_id}_{ts}.docx")
 
-    builder = CAMBuilder()
-    doc     = builder.build(cam_data)
-    doc.save(docx_path)
+    try:
+        builder = CAMBuilder()
+        doc     = builder.build(cam_data)
+        doc.save(docx_path)
 
-    pdf_path   = docx_path.replace(".docx", ".pdf")
-    pdf_result = convert_to_pdf(docx_path, pdf_path)
-    final_pdf  = pdf_result if (pdf_result and Path(pdf_result).exists()) else docx_path
+        # Verify DOCX
+        docx_file = Path(docx_path)
+        if not docx_file.exists() or docx_file.stat().st_size < 1024:
+            raise RuntimeError(f"DOCX file missing or corrupt: {docx_path}")
+
+        print(f"[generate_cam_documents] DOCX: {docx_path} ({docx_file.stat().st_size:,} bytes)")
+
+    except Exception as e:
+        print(f"[generate_cam_documents] DOCX build failed: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        raise
+
+    # PDF conversion (best-effort — DOCX is the guaranteed output)
+    pdf_path = docx_path.replace(".docx", ".pdf")
+    try:
+        pdf_result = convert_to_pdf(docx_path, pdf_path)
+        if pdf_result and Path(pdf_result).exists() and Path(pdf_result).stat().st_size > 1024:
+            final_pdf = str(Path(pdf_result).resolve())
+            print(f"[generate_cam_documents] PDF:  {final_pdf} ({Path(pdf_result).stat().st_size:,} bytes)")
+        else:
+            # Graceful degradation — serve DOCX as fallback for PDF requests
+            final_pdf = docx_path
+            print(f"[generate_cam_documents] PDF conversion failed — DOCX will be served")
+    except Exception as e:
+        print(f"[generate_cam_documents] PDF conversion error: {e}", file=sys.stderr)
+        final_pdf = docx_path
 
     return docx_path, final_pdf
 
@@ -967,6 +999,7 @@ async def download_cam(
                 detail=f"Failed to regenerate CAM {fmt.upper()} file."
             )
 
+
     filename = f"CAM_{case_id}_{row['company_name'].replace(' ','_')[:30]}{suffix}"
     return FileResponse(
         path       = file_path,
@@ -974,6 +1007,130 @@ async def download_cam(
         filename   = filename,
     )
 
+
+@app.post("/cases/{case_id}/cam/regenerate")
+async def regenerate_cam_documents_endpoint(
+    case_id: str,
+    user=Depends(get_current_user),
+):
+    """
+    Force-regenerate DOCX + PDF documents for a case that already has CAM JSON.
+    Useful when:
+      - Original documents were lost or paths were not saved
+      - CAM engine was updated and you want a fresh document
+      - Seeded demo case needs physical files for download
+
+    Production-grade: always uses absolute paths, verifies output, updates DB.
+    """
+    conn = get_db()
+    row  = conn.execute(
+        "SELECT cam_json, company_name FROM cases WHERE id=?",
+        (case_id,)
+    ).fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if not row["cam_json"]:
+        raise HTTPException(
+            status_code=400,
+            detail="CAM JSON not available. Run the pipeline first (POST /cases/{case_id}/start)."
+        )
+
+    try:
+        cam_data = json.loads(row["cam_json"])
+        docx_path, pdf_path = generate_cam_documents(case_id, cam_data, row["company_name"])
+
+        # Update database with new absolute paths
+        update_case_field(case_id, cam_docx_path=docx_path, cam_pdf_path=pdf_path)
+        log_stage(case_id, "document_regeneration", "complete",
+                  f"DOCX: {docx_path} | PDF: {pdf_path}")
+
+        return {
+            "message": "Documents regenerated successfully",
+            "case_id": case_id,
+            "docx_path": docx_path,
+            "pdf_path": pdf_path,
+            "docx_size_bytes": Path(docx_path).stat().st_size if Path(docx_path).exists() else 0,
+            "pdf_size_bytes": Path(pdf_path).stat().st_size if Path(pdf_path).exists() else 0,
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Document regeneration failed: {str(e)[:500]}"
+        )
+
+
+# ── Startup: auto-heal missing CAM documents ─────────────────
+@app.on_event("startup")
+async def _heal_missing_cam_documents():
+    """
+    On server start, find all cases that have CAM JSON but missing or broken
+    document files. Regenerate DOCX + PDF for each.
+
+    Catches ALL failure modes:
+      - NULL document paths (never saved)
+      - Relative paths that don't resolve from current working directory
+      - Deleted files (file moved or cleaned up)
+      - Seeded demo cases that were inserted directly into DB without
+        generating physical files
+
+    Runs ONCE at startup, in a background thread, does not block the server.
+    """
+    import threading
+
+    def _heal():
+        conn = get_db()
+        # Query ALL cases with CAM JSON — we'll check file existence in Python
+        rows = conn.execute("""
+            SELECT id, cam_json, company_name, cam_docx_path, cam_pdf_path
+            FROM cases
+            WHERE cam_json IS NOT NULL
+        """).fetchall()
+        conn.close()
+
+        if not rows:
+            print("[startup] No cases with CAM JSON found.")
+            return
+
+        healed = 0
+        for row in rows:
+            case_id = row["id"]
+            try:
+                # Check if BOTH files ACTUALLY exist on disk (catches relative path bugs)
+                docx_ok = (
+                    row["cam_docx_path"]
+                    and Path(row["cam_docx_path"]).exists()
+                    and Path(row["cam_docx_path"]).stat().st_size > 1024
+                )
+                pdf_ok = (
+                    row["cam_pdf_path"]
+                    and Path(row["cam_pdf_path"]).exists()
+                    and Path(row["cam_pdf_path"]).stat().st_size > 1024
+                )
+
+                if docx_ok and pdf_ok:
+                    continue  # Both files exist and are valid — skip
+
+                cam_data = json.loads(row["cam_json"])
+                docx_path, pdf_path = generate_cam_documents(
+                    case_id, cam_data, row["company_name"]
+                )
+                update_case_field(case_id, cam_docx_path=docx_path, cam_pdf_path=pdf_path)
+                healed += 1
+                print(f"[startup] Healed {case_id}: DOCX={Path(docx_path).name}, PDF={Path(pdf_path).name}")
+            except Exception as e:
+                print(f"[startup] Failed to heal {case_id}: {e}", file=sys.stderr)
+
+        if healed:
+            print(f"[startup] Document healing complete: {healed}/{len(rows)} case(s) regenerated.")
+        else:
+            print(f"[startup] All {len(rows)} case(s) have valid documents — no healing needed.")
+
+    # Run in background thread so server starts immediately
+    threading.Thread(target=_heal, daemon=True, name="doc-healer").start()
 
 @app.patch("/cases/{case_id}/primary-insight")
 async def save_primary_insight(
@@ -1088,7 +1245,13 @@ def _format_case(row: dict) -> dict:
     # Support both old (recommended_limit) and new (recommended_amount_inr) cam_json schemas
     rec_limit = cam.get("recommended_limit") or cam.get("recommended_amount_inr")
     risk_color= cam.get("decision_color") or cam.get("risk_band", "AMBER")
-    has_doc   = bool(row.get("cam_pdf_path") or row.get("cam_docx_path"))
+    # Document downloadable if: physical files exist, OR cam_json available
+    # (download endpoint auto-regenerates from cam_json on demand)
+    has_doc = bool(
+        (row.get("cam_pdf_path") and Path(row["cam_pdf_path"]).exists()) or
+        (row.get("cam_docx_path") and Path(row["cam_docx_path"]).exists()) or
+        row.get("cam_json")  # can regenerate on demand
+    )
 
     return {
         "id":              row["id"],
